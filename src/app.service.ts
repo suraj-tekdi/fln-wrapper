@@ -18,19 +18,25 @@ export class AppService {
       courseCategory,
       query,
     } = body;
+
     const gql = `{
       courseList(
         args: {
           includeClosed: false
-          filterText: ${query ? query : '""'}
-          category: ${courseCategory ? courseCategory : '""'}
+          filterText: ${query ? '"' + query + '"' : '""'}
+          category: ${courseCategory ? '"' + courseCategory + '"' : '""'}
           status: "Upcoming"
           tags: ""
-          duration: ${courseDuration ? courseDuration : '"all"'}
+          duration: ${courseDuration ? '"' + courseDuration + '"' : '"all"'}
           examDate: "all"
-          credits: ${courseCredits ? courseCredits : '"all"'}
-          ncCode: ${provider ? provider : '"all"'}
-          courseType: ${courseMode ? courseMode : '"all"'}
+          credits: ${courseCredits === 'N'
+        ? '"false"'
+        : courseCredits === 'Y'
+          ? '"true"'
+          : '"all"'
+      }
+          ncCode: ${provider ? '"' + provider + '"' : '"all"'}
+          courseType: ${courseMode ? '"' + courseMode + '"' : '"all"'}
         }
         first: 100
       ) {
@@ -92,7 +98,10 @@ export class AppService {
           .pipe(map((item) => item.data)),
       );
 
-      console.log('returned courses are: ', resp.substr(4));
+      console.log(
+        'returned courses are: ',
+        JSON.parse(resp.substr(4)).data.courseList,
+      );
       return JSON.parse(resp.substr(4));
     } catch (err) {
       console.log('err: ', err);

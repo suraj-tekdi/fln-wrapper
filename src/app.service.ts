@@ -1,23 +1,38 @@
 import { HttpService } from '@nestjs/axios';
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { lastValueFrom, map } from 'rxjs';
+import { components } from 'types/schema';
+import { SwayamApiResponse } from 'types/SwayamApiResponse';
+import { swayamCatalogueGenerator } from 'utils/generator';
 
 @Injectable()
 export class AppService {
-  constructor(private readonly httpService: HttpService) { }
+  constructor(private readonly httpService: HttpService) {}
+
   getHello(): string {
     return 'Hello World!';
   }
 
-  async getCoursesFromSwayam(body: any) {
-    const {
-      provider,
-      courseMode,
-      courseDuration,
-      courseCredits,
-      courseCategory,
-      query,
-    } = body;
+  async getCoursesFromSwayam(body: {
+    context: components['schemas']['Context'];
+    message: { intent: components['schemas']['Intent'] };
+  }) {
+    const intent: components['schemas']['Intent'] = body.message.intent;
+    console.log('intent: ', intent);
+
+    // destructuring the intent
+    const provider = intent?.provider?.descriptor?.name;
+    const query = intent?.item?.descriptor?.name;
+    const courseMode = intent?.item?.tags?.course_mode;
+    const courseDuration = intent?.item?.tags?.course_duration;
+    const courseCredits = intent?.item?.tags?.course_credits;
+    const courseCategory = intent?.item?.tags?.course_category;
+    const rating = intent?.item?.rating;
+
+    // const courseType = intent.item.tags.course_type;
+    // const course_level = intent.item.tags.course_level;
+    // const courseLanguage = intent.item.tags.course_language;
+    // const coursePrice = intent.item.tags.course_price;
 
     const gql = `{
       courseList(
@@ -38,7 +53,7 @@ export class AppService {
           ncCode: ${provider ? '"' + provider + '"' : '"all"'}
           courseType: ${courseMode ? '"' + courseMode + '"' : '"all"'}
         }
-        first: 100
+        first: 1058
       ) {
         edges {
           node {
@@ -98,11 +113,16 @@ export class AppService {
           .pipe(map((item) => item.data)),
       );
 
-      console.log(
-        'returned courses are: ',
-        JSON.parse(resp.substr(4)).data.courseList,
-      );
-      return JSON.parse(resp.substr(4));
+      const swayamResponse: SwayamApiResponse = JSON.parse(resp.substr(4));
+      // console.log('returned courses are: ', swayamResponse);
+      const catalog = swayamCatalogueGenerator(swayamResponse, query);
+
+      const courseData: any = {
+        context: body.context,
+        message: catalog,
+      };
+
+      return courseData;
     } catch (err) {
       console.log('err: ', err);
       throw new InternalServerErrorException(err);

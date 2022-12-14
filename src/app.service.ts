@@ -119,7 +119,9 @@ export class AppService {
 
       const courseData: any = {
         context: body.context,
-        message: catalog,
+        message: {
+          catalogue: catalog,
+        },
       };
 
       return courseData;

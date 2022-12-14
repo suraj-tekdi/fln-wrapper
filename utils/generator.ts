@@ -22,7 +22,17 @@ export const swayamCatalogueGenerator = (
     }
 
     // getting categories
-    categories.add(item.category[0].name ? item.category[0].name : '');
+    categories.add(
+      item.category[0].name
+        ? {
+          id: item.category[0].name,
+          parent_category_id: null,
+          descriptor: {
+            name: item.category[0].name,
+          },
+        }
+        : null,
+    );
   });
 
   const catalogue: components['schemas']['Catalog'] = {};

@@ -55,6 +55,7 @@ export const swayamCatalogueGenerator = (
             descriptor: {
               name: course.title,
               long_desc: course.explorerSummary,
+              images: [course.coursePictureUrl],
             },
             price: {
               currency: 'INR',
@@ -76,7 +77,6 @@ export const swayamCatalogueGenerator = (
               instructors: course.explorerInstructorName,
               offeringInstitue: course.instructorInstitute,
               url: course.url,
-              thumbnail: course.coursePictureUrl,
               enrollmentEndDate: course.enrollmentEndDate.toString(),
             },
             rateable: true,

@@ -2,7 +2,7 @@ import { components } from 'types/schema';
 import { SwayamApiResponse } from 'types/SwayamApiResponse';
 import { SwayamCourse } from 'types/SwayamCourese';
 
-export const swayamCatalogueGenerator = (
+export const swayamCatalogGenerator = (
   apiData: SwayamApiResponse,
   query: string,
 ) => {
@@ -26,67 +26,136 @@ export const swayamCatalogueGenerator = (
       item.category[0].name
         ? {
           id: item.category[0].name,
-          parent_category_id: null,
+          parent_category_id: item.category[0].name,
           descriptor: {
             name: item.category[0].name,
           },
         }
-        : null,
+        : {
+          id: 'OTHERS',
+          parent_category_id: 'OTHERS',
+          descriptor: {
+            name: 'OTHERS',
+          },
+        },
     );
   });
 
-  const catalogue: components['schemas']['Catalog'] = {};
-  catalogue['bpp/descriptor'] = { name: `Catalog for ${query}` };
+  const catalog = {};
+  catalog['descriptor'] = { name: `Catalog for ${query}` };
 
   // adding providers
-  catalogue['bpp/providers'] = Object.keys(providerWise).map(
-    (provider: string) => {
-      const providerObj: components['schemas']['Provider'] = {
-        id: provider,
-        descriptor: {
-          name: provider,
-        },
-        categories: Array.from(categories),
+  catalog['providers'] = Object.keys(providerWise).map((provider: string) => {
+    const providerObj: components['schemas']['Provider'] = {
+      id: provider,
+      descriptor: {
+        name: provider,
+      },
+      categories: Array.from(categories),
 
-        items: providerWise[provider].map((course: SwayamCourse) => {
-          const providerItem: components['schemas']['Item'] = {
-            id: course.id,
-            parent_item_id: null,
-            descriptor: {
-              name: course.title,
-              long_desc: course.explorerSummary,
-              images: [course.coursePictureUrl],
+      items: providerWise[provider].map((course: SwayamCourse) => {
+        const providerItem = {
+          id: course.id,
+          parent_item_id: course.id,
+          descriptor: {
+            name: course.title,
+            long_desc: course.explorerSummary ? course.explorerSummary : '',
+            images: [{ url: encodeURI(course.coursePictureUrl) }],
+          },
+          price: {
+            currency: 'INR',
+            value: 0 + '', // map it to an actual response
+          },
+          category_id: course.category[0].name,
+          recommended: course.featured ? true : false,
+          time: {
+            label: 'Course Schedule',
+            duration: `P${course.weeks}W`, // ISO 8601 duration format
+            range: {
+              start: course.startDate.toString(),
+              end:
+                course.endDate.toString() === ''
+                  ? course.startDate.toString()
+                  : course.endDate.toString(),
             },
-            price: {
-              currency: 'INR',
-              value: 0 + '', // map it to an actual response
+          },
+          rating: '0', // map it to an actual response
+          tags: [
+            {
+              name: 'credits',
+              value: course.credits + '',
             },
-            category_id: course.category[0].name,
-            recommended: course.featured ? true : false,
-            time: {
-              label: 'Course Schedule',
-              duration: `P${course.weeks}W`, // ISO 8601 duration format
-              range: {
-                start: course.startDate.toString(),
-                end: course.endDate.toString(),
-              },
+            {
+              name: 'instructors',
+              value: course.explorerInstructorName,
             },
-            rating: '0', // map it to an actual response
-            tags: {
-              credits: course.credits + '',
-              instructors: course.explorerInstructorName,
-              offeringInstitue: course.instructorInstitute,
-              url: course.url,
-              enrollmentEndDate: course.enrollmentEndDate.toString(),
+            {
+              name: 'offeringInstitue',
+              value: course.instructorInstitute,
             },
-            rateable: true,
-          };
-          return providerItem;
-        }),
-      };
-      return providerObj;
+            {
+              name: 'url',
+              value: course.url,
+            },
+            {
+              name: 'enrollmentEndDate',
+              value: course.enrollmentEndDate.toString(),
+            },
+          ],
+          rateable: true,
+        };
+        return providerItem;
+      }),
+    };
+    return providerObj;
+  });
+
+  return catalog;
+};
+
+export const generateOrder = (
+  action: string,
+  message_id: string,
+  item: any,
+  providerId: string,
+  providerDescriptor: any,
+  categoryId: string,
+) => {
+  const order = {
+    id: message_id + Date.now(),
+    ref_order_ids: [],
+    state: action === 'confirm' ? 'COMPLETE' : 'ACTIVE',
+    type: 'DRAFT',
+    provider: {
+      id: providerId,
+      descriptor: providerDescriptor,
+      category_id: categoryId,
     },
-  );
+    items: [item],
+    fulfillments: {
+      id: '',
+      type: 'ONLINE',
+      tracking: false,
+      customer: {},
+      agent: {},
+      contact: {},
+    },
+    created_at: new Date(Date.now()),
+    updated_at: new Date(Date.now()),
+    tags: [
+      {
+        display: true,
+        name: 'order tags',
+        list: [
+          {
+            name: 'tag_name',
+            value: 'value of the key in name',
+            display: true,
+          },
+        ],
+      },
+    ],
+  };
 
-  return catalogue;
+  return order;
 };

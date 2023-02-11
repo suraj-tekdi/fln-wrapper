@@ -886,7 +886,9 @@ export interface components {
     /** @description Describes a gps coordinate */
     Gps: string;
     /** @description Image of an object. <br/><br/> A url based image will look like <br/><br/>```uri:http://path/to/image``` <br/><br/> An image can also be sent as a data string. For example : <br/><br/> ```data:js87y34ilhriuho84r3i4``` */
-    Image: string;
+    Image: {
+      url: string;
+    };
     /** @description Intent of a user. Used for searching for services */
     Intent: {
       descriptor?: components['schemas']['Descriptor'];

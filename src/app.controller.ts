@@ -3,7 +3,7 @@ import { AppService } from './app.service';
 
 @Controller()
 export class AppController {
-  constructor(private readonly appService: AppService) { }
+  constructor(private readonly appService: AppService) {}
 
   @Get()
   getHello(): string {
@@ -13,5 +13,15 @@ export class AppController {
   @Post('courses')
   getCoursesFromSwayam(@Body() body: any) {
     return this.appService.getCoursesFromSwayam(body);
+  }
+
+  @Post('courses/select')
+  selectCourse(@Body() body: any) {
+    return this.appService.handleSelect(body);
+  }
+
+  @Post('courses/confirm')
+  confirmCourse(@Body() body: any) {
+    return this.appService.handleConfirm(body);
   }
 }

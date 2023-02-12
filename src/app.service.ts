@@ -26,16 +26,22 @@ export class AppService {
     const tagGroup = intent?.item?.tags;
     console.log('tag group: ', tagGroup);
     const flattenedTags: any = {};
-
-    (tagGroup[0].list as any[])?.forEach((tag) => {
-      flattenedTags[tag.name] = tag.value;
-    });
-
+    if (tagGroup) {
+      (tagGroup[0].list as any[])?.forEach((tag) => {
+        flattenedTags[tag.name] = tag.value;
+      });
+    }
     console.log('flattened tags: ', flattenedTags);
-    const courseMode = flattenedTags?.course_mode;
-    const courseDuration = flattenedTags?.course_duration;
-    const courseCredits = flattenedTags?.course_credits;
-    const courseCategory = flattenedTags?.course_category;
+    const courseMode = flattenedTags?.course_mode
+      ? flattenedTags?.course_mode
+      : '';
+    const courseDuration = flattenedTags?.course_duration
+      ? flattenedTags?.course_duration
+      : '';
+    const courseCredits = flattenedTags?.course_credits
+      ? flattenedTags?.course_credits
+      : '';
+    const courseCategory = intent?.category?.descriptor?.name;
 
     const gql = `{
       courseList(
@@ -117,10 +123,6 @@ export class AppService {
       );
 
       const swayamResponse: SwayamApiResponse = JSON.parse(resp.substr(4));
-      // console.log(
-      //   'returned courses are: ',
-      //   swayamResponse.data.courseList.edges[0].node,
-      // );
       const catalog = swayamCatalogGenerator(swayamResponse, query);
 
       const courseData: any = {
@@ -249,7 +251,6 @@ export class AppService {
           .pipe(map((item) => item.data)),
       );
       console.log('res in test api update: ', res.data);
-      // res = res.data.update_loan_applications.returning;
       confirmDto.message.order = order;
       return confirmDto;
     } catch (err) {

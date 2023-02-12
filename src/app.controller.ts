@@ -20,6 +20,11 @@ export class AppController {
     return this.appService.handleSelect(body);
   }
 
+  @Post('courses/init')
+  initCourse(@Body() body: any) {
+    return this.appService.handleInit(body);
+  }
+
   @Post('courses/confirm')
   confirmCourse(@Body() body: any) {
     return this.appService.handleConfirm(body);

@@ -26,9 +26,11 @@ export class AppService {
     const tagGroup = intent?.item?.tags;
     console.log('tag group: ', tagGroup);
     const flattenedTags: any = {};
+
     (tagGroup[0].list as any[])?.forEach((tag) => {
       flattenedTags[tag.name] = tag.value;
     });
+
     console.log('flattened tags: ', flattenedTags);
     const courseMode = flattenedTags?.course_mode;
     const courseDuration = flattenedTags?.course_duration;
@@ -184,15 +186,18 @@ export class AppService {
     return resp;
   }
 
-  async handleInit(initDto: any) {
-    /**fulfillments: {
-      id: '',
-      type: 'ONLINE',
-      tracking: false,
-      customer: {},
-      agent: {},
-      contact: {},
-            }, */
+  async handleInit(selectDto: any) {
+    // fine tune the order here
+    const order = selectDto.message.order;
+    order['id'] = selectDto.context.transaction_id + Date.now();
+    order['state'] = 'ACTIVE';
+    order['type'] = 'DEFAULT';
+    order['created_at'] = new Date(Date.now());
+    order['updated_at'] = new Date(Date.now());
+    selectDto.message.order = order;
+
+    const resp = selectDto;
+    return resp;
   }
 
   async handleConfirm(confirmDto: any) {

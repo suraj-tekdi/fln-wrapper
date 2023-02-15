@@ -62,7 +62,7 @@ export class AppService {
           ncCode: ${provider ? '"' + provider + '"' : '"all"'}
           courseType: ${courseMode ? '"' + courseMode + '"' : '"all"'}
         }
-        first: 1058
+        first: 100
       ) {
         edges {
           node {
@@ -141,22 +141,43 @@ export class AppService {
 
   async handleSelect(selectDto: any) {
     // fine tune the order here
+
+    // order['id'] = selectDto.context.transaction_id + Date.now();
+
     const order = selectDto.message.order;
+
+    const longDes =
+      "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.";
+
+    order?.items.map((item) => {
+      item['descriptor']['long_desc'] = longDes;
+    });
+
+    selectDto.message.order = order;
+    selectDto.context.action = 'on_select';
+    const resp = selectDto;
+    return resp;
+  }
+
+  async handleInit(selectDto: any) {
+    // fine tune the order here
+    const order = selectDto.message.order;
+
+    selectDto.message.order = order;
     order['id'] = selectDto.context.transaction_id + Date.now();
     order['state'] = 'ACTIVE';
     order['type'] = 'DEFAULT';
     order['created_at'] = new Date(Date.now());
     order['updated_at'] = new Date(Date.now());
-    selectDto.message.order = order;
-
+    order['updated_at'] = new Date(Date.now());
     // storing draft order in database
     const createOrderGQL = `mutation insertDraftOrder($order: dsep_orders_insert_input!) {
-      insert_dsep_orders_one (
-        object: $order
-      ) {
-        order_id
-      }
-    }`;
+  insert_dsep_orders_one (
+    object: $order
+  ) {
+    order_id
+  }
+}`;
 
     await lastValueFrom(
       this.httpService
@@ -167,7 +188,9 @@ export class AppService {
             variables: {
               order: {
                 order_id: selectDto.message.order.id,
-                user_id: 'ABC', // make it dynamic
+                user_id:
+                  selectDto.message?.order?.fulfillments[0]?.customer?.person
+                    ?.name,
                 created_at: new Date(Date.now()),
                 updated_at: new Date(Date.now()),
                 status: selectDto.message.order.state,
@@ -184,33 +207,47 @@ export class AppService {
         )
         .pipe(map((item) => item.data)),
     );
-    const resp = selectDto;
-    return resp;
-  }
-
-  async handleInit(selectDto: any) {
-    // fine tune the order here
-    const order = selectDto.message.order;
-    order['id'] = selectDto.context.transaction_id + Date.now();
-    order['state'] = 'ACTIVE';
-    order['type'] = 'DEFAULT';
-    order['created_at'] = new Date(Date.now());
-    order['updated_at'] = new Date(Date.now());
-    selectDto.message.order = order;
-
+    selectDto.context.action = 'on_init';
     const resp = selectDto;
     return resp;
   }
 
   async handleConfirm(confirmDto: any) {
     // fine tune the order here
-    const order = confirmDto.message.order;
+    const orderId = confirmDto.message.order?.id;
+    const getCourseGQL = `query MyGetQueryCount {
+      dsep_orders(where: {order_id: {_eq: "${orderId}"}}) {
+        order_details
+      }
+    }`;
+    // fetch course here
+    const requestOptions = {
+      headers: {
+        'Content-Type': 'application/json',
+        'x-hasura-admin-secret': process.env.SECRET,
+      },
+    };
+
+    let order = await lastValueFrom(
+      this.httpService
+        .post(
+          process.env.HASURA_URI,
+          {
+            query: getCourseGQL,
+          },
+          requestOptions,
+        )
+        .pipe(map((item) => item.data)),
+    );
+    console.log('res in test api update: ', order.data);
+    order = order.data.dsep_orders[0].order_details;
+
     order['state'] = 'COMPLETE';
     order['updated_at'] = new Date(Date.now());
+
     confirmDto.message.order = order;
 
     // update order as confirmed in database
-
     const updateOrderGQL = `mutation updateDSEPOrder($order_id: String, $changes: dsep_orders_set_input) {
       update_dsep_orders (
         where: {order_id: {_eq: $order_id}},
@@ -225,12 +262,6 @@ export class AppService {
       }
     }`;
 
-    const requestOptions = {
-      headers: {
-        'Content-Type': 'application/json',
-        'x-hasura-admin-secret': process.env.SECRET,
-      },
-    };
     try {
       const res = await lastValueFrom(
         this.httpService
@@ -251,7 +282,9 @@ export class AppService {
           .pipe(map((item) => item.data)),
       );
       console.log('res in test api update: ', res.data);
+
       confirmDto.message.order = order;
+      confirmDto.context.action = 'on_confirm';
       return confirmDto;
     } catch (err) {
       console.log('err: ', err);

@@ -51,7 +51,7 @@ export const swayamCatalogGenerator = (
       descriptor: {
         name: provider,
       },
-      categories: Array.from(categories),
+      categories: [...new Set(categories)],
 
       items: providerWise[provider].map((course: SwayamCourse) => {
         const providerItem = {
@@ -79,7 +79,7 @@ export const swayamCatalogGenerator = (
                   : course.endDate.toString(),
             },
           },
-          rating: '0', // map it to an actual response
+          rating: Math.floor(Math.random() * 6), // map it to an actual response
           tags: [
             {
               name: 'credits',
@@ -102,7 +102,7 @@ export const swayamCatalogGenerator = (
               value: course.enrollmentEndDate.toString(),
             },
           ],
-          rateable: true,
+          rateable: false,
         };
         return providerItem;
       }),

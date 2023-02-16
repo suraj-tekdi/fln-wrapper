@@ -3,7 +3,12 @@ import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { lastValueFrom, map } from 'rxjs';
 import { components } from 'types/schema';
 import { SwayamApiResponse } from 'types/SwayamApiResponse';
-import { swayamCatalogGenerator } from 'utils/generator';
+import { selectItemMapper, swayamCatalogGenerator } from 'utils/generator';
+
+// getting course data
+import * as fs from 'fs';
+const file = fs.readFileSync('./course.json', 'utf8');
+const courseData = JSON.parse(file);
 
 @Injectable()
 export class AppService {
@@ -62,7 +67,7 @@ export class AppService {
           ncCode: ${provider ? '"' + provider + '"' : '"all"'}
           courseType: ${courseMode ? '"' + courseMode + '"' : '"all"'}
         }
-        first: 100
+        first: 10
       ) {
         edges {
           node {
@@ -144,14 +149,14 @@ export class AppService {
 
     // order['id'] = selectDto.context.transaction_id + Date.now();
 
-    const order = selectDto.message.order;
+    const itemId = selectDto.message.order.items[0].id;
+    const order: any = selectItemMapper(courseData[itemId]);
 
-    const longDes =
-      "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.";
 
-    order?.items.map((item) => {
-      item['descriptor']['long_desc'] = longDes;
-    });
+    // order?.items.map((item) => {
+    //   item['descriptor']['long_desc'] = longDes;
+    //   item['tags'] = [...item['tags'],]
+    // });
 
     selectDto.message.order = order;
     selectDto.context.action = 'on_select';
@@ -161,15 +166,26 @@ export class AppService {
 
   async handleInit(selectDto: any) {
     // fine tune the order here
-    const order = selectDto.message.order;
-
+    const itemId = selectDto.message.order.items[0].id;
+    const order: any = selectItemMapper(courseData[itemId]);
+    order['fulfillments'] = selectDto.message.order.fulfillments;
     selectDto.message.order = order;
-    order['id'] = selectDto.context.transaction_id + Date.now();
-    order['state'] = 'ACTIVE';
+    selectDto.context.action = 'on_init';
+    const resp = selectDto;
+    return resp;
+  }
+
+  async handleConfirm(confirmDto: any) {
+    // fine tune the order here
+    const itemId = confirmDto.message.order.items[0].id;
+    const order: any = selectItemMapper(courseData[itemId]);
+    order['fulfillments'] = confirmDto.message.order.fulfillments;
+    order['id'] = confirmDto.context.transaction_id + Date.now();
+    order['state'] = 'COMPLETE';
     order['type'] = 'DEFAULT';
     order['created_at'] = new Date(Date.now());
     order['updated_at'] = new Date(Date.now());
-    order['updated_at'] = new Date(Date.now());
+    confirmDto.message.order = order;
     // storing draft order in database
     const createOrderGQL = `mutation insertDraftOrder($order: dsep_orders_insert_input!) {
   insert_dsep_orders_one (
@@ -187,14 +203,14 @@ export class AppService {
             query: createOrderGQL,
             variables: {
               order: {
-                order_id: selectDto.message.order.id,
+                order_id: confirmDto.message.order.id,
                 user_id:
-                  selectDto.message?.order?.fulfillments[0]?.customer?.person
+                  confirmDto.message?.order?.fulfillments[0]?.customer?.person
                     ?.name,
                 created_at: new Date(Date.now()),
                 updated_at: new Date(Date.now()),
-                status: selectDto.message.order.state,
-                order_details: selectDto.message.order,
+                status: confirmDto.message.order.state,
+                order_details: confirmDto.message.order,
               },
             },
           },
@@ -207,43 +223,6 @@ export class AppService {
         )
         .pipe(map((item) => item.data)),
     );
-    selectDto.context.action = 'on_init';
-    const resp = selectDto;
-    return resp;
-  }
-
-  async handleConfirm(confirmDto: any) {
-    // fine tune the order here
-    const orderId = confirmDto.message.order?.id;
-    const getCourseGQL = `query MyGetQueryCount {
-      dsep_orders(where: {order_id: {_eq: "${orderId}"}}) {
-        order_details
-      }
-    }`;
-    // fetch course here
-    const requestOptions = {
-      headers: {
-        'Content-Type': 'application/json',
-        'x-hasura-admin-secret': process.env.SECRET,
-      },
-    };
-
-    let order = await lastValueFrom(
-      this.httpService
-        .post(
-          process.env.HASURA_URI,
-          {
-            query: getCourseGQL,
-          },
-          requestOptions,
-        )
-        .pipe(map((item) => item.data)),
-    );
-    console.log('res in test api update: ', order.data);
-    order = order.data.dsep_orders[0].order_details;
-
-    order['state'] = 'COMPLETE';
-    order['updated_at'] = new Date(Date.now());
 
     confirmDto.message.order = order;
 
@@ -277,7 +256,12 @@ export class AppService {
                 },
               },
             },
-            requestOptions,
+            {
+              headers: {
+                'Content-Type': 'application/json',
+                'x-hasura-admin-secret': process.env.SECRET,
+              },
+            },
           )
           .pipe(map((item) => item.data)),
       );
@@ -285,6 +269,7 @@ export class AppService {
 
       confirmDto.message.order = order;
       confirmDto.context.action = 'on_confirm';
+      console.log('action: ', confirmDto.context.action);
       return confirmDto;
     } catch (err) {
       console.log('err: ', err);

@@ -3,7 +3,7 @@ import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { lastValueFrom, map } from 'rxjs';
 import { components } from 'types/schema';
 import { SwayamApiResponse } from 'types/SwayamApiResponse';
-import { selectItemMapper, swayamCatalogGenerator } from 'utils/generator';
+import { selectItemMapper, flnCatalogGenerator } from 'utils/generator';
 
 // getting course data
 import * as fs from 'fs';
@@ -12,7 +12,7 @@ const courseData = JSON.parse(file);
 
 @Injectable()
 export class AppService {
-  constructor(private readonly httpService: HttpService) {}
+  constructor(private readonly httpService: HttpService) { }
 
   getHello(): string {
     return 'Hello World!';
@@ -48,87 +48,22 @@ export class AppService {
       : '';
     const courseCategory = intent?.category?.descriptor?.name;
 
-    const gql = `{
-      courseList(
-        args: {
-          includeClosed: false
-          filterText: ${query ? '"' + query + '"' : '""'}
-          category: ${courseCategory ? '"' + courseCategory + '"' : '""'}
-          status: "Upcoming"
-          tags: ""
-          duration: ${courseDuration ? '"' + courseDuration + '"' : '"all"'}
-          examDate: "all"
-          credits: ${courseCredits === 'N'
-        ? '"false"'
-        : courseCredits === 'Y'
-          ? '"true"'
-          : '"all"'
-      }
-          ncCode: ${provider ? '"' + provider + '"' : '"all"'}
-          courseType: ${courseMode ? '"' + courseMode + '"' : '"all"'}
-        }
-        first: 10
-      ) {
-        edges {
-          node {
-            id
-            title
-            url
-            explorerSummary
-            explorerInstructorName
-            enrollment {
-              enrolled
-            }
-            openForRegistration
-            showInExplorer
-            startDate
-            endDate
-            examDate
-            enrollmentEndDate
-            estimatedWorkload
-            category {
-              name
-              category
-              parentId
-            }
-            tags {
-              name
-            }
-            featured
-            coursePictureUrl
-            credits
-            weeks
-            nodeCode
-            instructorInstitute
-            ncCode
-            semester
-          }
-        }
-        pageInfo {
-          endCursor
-          hasNextPage
-        }
-      }
-      examDates {
-        date
-      }
-    }
-    `;
-    console.log('gql', gql);
     try {
+
       const resp = await lastValueFrom(
         this.httpService
-          .get('https://swayam.gov.in/modules/gql/query', {
-            params: {
-              q: gql,
-              expanded_gcb_tags: 'gcb-markdown',
-            },
+          .post('https://sunbirdsaas.com/api/content/v1/search', {
+            "request": {
+              "filters": {
+                "channel": "013812745304276992183"
+              }
+            }
           })
           .pipe(map((item) => item.data)),
       );
 
-      const swayamResponse: SwayamApiResponse = JSON.parse(resp.substr(4));
-      const catalog = swayamCatalogGenerator(swayamResponse, query);
+      const flnResponse: any = resp;
+      const catalog = flnCatalogGenerator(flnResponse, query);
 
       const courseData: any = {
         context: body.context,

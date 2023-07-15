@@ -38,10 +38,10 @@ export const flnCatalogGenerator = (
       items: providerWise[provider].map((course: any) => {
         const providerItem = {
           id: course.identifier,
-          parent_item_id: course.identifier,
+          parent_item_id: '',
           descriptor: {
             name: course.name,
-            long_desc: course.explorerSummary ? course.explorerSummary : '',
+            long_desc: course.description ? course.description : '',
             images: [
               {
                 url:
@@ -78,7 +78,7 @@ export const flnCatalogGenerator = (
                 },
                 {
                   name: 'instructors',
-                  value: course.creator,
+                  value: '',
                 },
                 {
                   name: 'offeringInstitue',

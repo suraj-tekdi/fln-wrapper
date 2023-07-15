@@ -37,16 +37,18 @@ export class AppService {
       });
     }
     console.log('flattened tags: ', flattenedTags);
-    const courseMode = flattenedTags?.course_mode
-      ? flattenedTags?.course_mode
-      : '';
-    const courseDuration = flattenedTags?.course_duration
-      ? flattenedTags?.course_duration
-      : '';
-    const courseCredits = flattenedTags?.course_credits
-      ? flattenedTags?.course_credits
-      : '';
-    const courseCategory = intent?.category?.descriptor?.name;
+    const domain = flattenedTags?.domain !== '' ? flattenedTags?.domain
+      : undefined;
+    const theme = flattenedTags?.curriculargoal !== '' ? flattenedTags?.curriculargoal
+      : undefined;
+    const goal = flattenedTags?.goal !== '' ? flattenedTags?.goal
+      : undefined;
+    const competency = flattenedTags?.competency !== '' ? flattenedTags?.competency
+      : undefined;
+    const language = flattenedTags?.language !== '' ? flattenedTags?.language
+      : undefined;
+    const contentType = flattenedTags?.contentType !== '' ? flattenedTags?.contentType
+      : undefined;
 
     try {
 
@@ -55,7 +57,13 @@ export class AppService {
           .post('https://sunbirdsaas.com/api/content/v1/search', {
             "request": {
               "filters": {
-                "channel": "013812745304276992183"
+                "channel": "013812745304276992183",
+                "domain": [domain],
+                "theme": [theme],
+                "curriculargoal": [goal],
+                "competency": [competency],
+                "contentType": [language],
+                "language": [contentType]
               }
             }
           })

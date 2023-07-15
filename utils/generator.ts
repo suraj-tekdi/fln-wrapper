@@ -2,46 +2,27 @@ import { components } from 'types/schema';
 import { SwayamApiResponse } from 'types/SwayamApiResponse';
 import { SwayamCourse } from 'types/SwayamCourese';
 
-export const swayamCatalogGenerator = (
-  apiData: SwayamApiResponse,
+export const flnCatalogGenerator = (
+  apiData: any,
   query: string,
 ) => {
-  const courses: ReadonlyArray<{ node: SwayamCourse }> =
-    apiData.data.courseList.edges;
+  const courses: ReadonlyArray<{ node: any }> =
+    apiData.result.content;
   const providerWise = {};
   let categories: any = new Set();
 
-  courses.forEach((course) => {
-    const item = course.node;
-    const provider = item.ncCode;
+  courses.forEach((course, index) => {
+    const item = course;
+    const provider = 'fln';
     // creating the provider wise map
     if (providerWise[provider]) {
       providerWise[provider].push(item);
     } else {
       providerWise[provider] = [item];
     }
-
-    // getting categories
-    categories.add(
-      item.category[0].name
-        ? {
-          id: item.category[0].name,
-          parent_category_id: item.category[0].name,
-          descriptor: {
-            name: item.category[0].name,
-          },
-        }
-        : {
-          id: 'OTHERS',
-          parent_category_id: 'OTHERS',
-          descriptor: {
-            name: 'OTHERS',
-          },
-        },
-    );
   });
 
-  categories = Array.from(categories);
+  categories = [];
 
   const catalog = {};
   catalog['descriptor'] = { name: `Catalog for ${query}` };
@@ -53,23 +34,22 @@ export const swayamCatalogGenerator = (
       descriptor: {
         name: provider,
       },
-      categories: [...new Set(categories)],
-
-      items: providerWise[provider].map((course: SwayamCourse) => {
+      categories: [],
+      items: providerWise[provider].map((course: any) => {
         const providerItem = {
-          id: course.id,
-          parent_item_id: course.id,
+          id: course.identifier,
+          parent_item_id: course.identifier,
           descriptor: {
-            name: course.title,
+            name: course.name,
             long_desc: course.explorerSummary ? course.explorerSummary : '',
             images: [
               {
                 url:
-                  encodeURI(course.coursePictureUrl) === ''
+                  encodeURI(course.appIcon) === ''
                     ? encodeURI(
                       'https://thumbs.dreamstime.com/b/set-colored-pencils-placed-random-order-16759556.jpg',
                     )
-                    : encodeURI(course.coursePictureUrl),
+                    : encodeURI(course.appIcon),
               },
             ],
           },
@@ -77,17 +57,14 @@ export const swayamCatalogGenerator = (
             currency: 'INR',
             value: 0 + '', // map it to an actual response
           },
-          category_id: course.category[0].name,
+          category_id: course.primaryCategory || '',
           recommended: course.featured ? true : false,
           time: {
             label: 'Course Schedule',
-            duration: `P${course.weeks ?? 10}W`, // ISO 8601 duration format
+            duration: `P${12}W`, // ISO 8601 duration format
             range: {
-              start: course.startDate.toString(),
-              end:
-                course.endDate.toString() === ''
-                  ? course.startDate.toString()
-                  : course.endDate.toString(),
+              start: '2023-07-23T18:30:00.000000Z',
+              end: '2023-10-12T18:30:00.000000Z'
             },
           },
           rating: Math.floor(Math.random() * 6).toString(), // map it to an actual response
@@ -97,23 +74,23 @@ export const swayamCatalogGenerator = (
               list: [
                 {
                   name: 'credits',
-                  value: course.credits + '',
+                  value: course.credits + '' || '',
                 },
                 {
                   name: 'instructors',
-                  value: course.explorerInstructorName,
+                  value: course.creator,
                 },
                 {
                   name: 'offeringInstitue',
-                  value: course.instructorInstitute,
+                  value: course.organisation?.[0] || '',
                 },
                 {
                   name: 'url',
-                  value: encodeURI(course.url),
+                  value: encodeURI(course.linkedUrl),
                 },
                 {
                   name: 'enrollmentEndDate',
-                  value: course.enrollmentEndDate.toString(),
+                  value: '2023-07-31T18:29:00.000000Z',
                 },
               ],
             },

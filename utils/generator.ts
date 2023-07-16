@@ -7,7 +7,7 @@ export const flnCatalogGenerator = (
   query: string,
 ) => {
   const courses: ReadonlyArray<{ node: any }> =
-    apiData.result.content;
+    apiData.result.content || [];
   const providerWise = {};
   let categories: any = new Set();
 
@@ -74,7 +74,7 @@ export const flnCatalogGenerator = (
               list: [
                 {
                   name: 'credits',
-                  value: course.credits + '' || '',
+                  value: course.credits || '',
                 },
                 {
                   name: 'instructors',
@@ -86,7 +86,7 @@ export const flnCatalogGenerator = (
                 },
                 {
                   name: 'url',
-                  value: encodeURI(course.linkedUrl),
+                  value: encodeURI(course.linkedUrl || ''),
                 },
                 {
                   name: 'enrollmentEndDate',

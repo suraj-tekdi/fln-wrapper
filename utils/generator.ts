@@ -37,7 +37,7 @@ export const flnCatalogGenerator = (
       categories: [],
       items: providerWise[provider].map((course: any) => {
         const providerItem = {
-          id: course.id,
+          id: `${course.id}`,
           parent_item_id: '',
           descriptor: {
             name: course.title,

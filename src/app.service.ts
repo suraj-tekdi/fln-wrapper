@@ -61,7 +61,7 @@ export class AppService {
               themes: theme,
               goal: goal,
               competency: competency,
-              contentType: language
+              contentType: contentType
             }
           })
           .pipe(map((item) => item.data)),

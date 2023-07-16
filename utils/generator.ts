@@ -7,7 +7,7 @@ export const flnCatalogGenerator = (
   query: string,
 ) => {
   const courses: ReadonlyArray<{ node: any }> =
-    apiData.result.content;
+    apiData;
   const providerWise = {};
   let categories: any = new Set();
 
@@ -37,19 +37,19 @@ export const flnCatalogGenerator = (
       categories: [],
       items: providerWise[provider].map((course: any) => {
         const providerItem = {
-          id: course.identifier,
+          id: `${course.id}`,
           parent_item_id: '',
           descriptor: {
-            name: course.name,
+            name: course.title,
             long_desc: course.description ? course.description : '',
             images: [
               {
                 url:
-                  encodeURI(course.appIcon) === ''
+                  course.image === null
                     ? encodeURI(
                       'https://thumbs.dreamstime.com/b/set-colored-pencils-placed-random-order-16759556.jpg',
                     )
-                    : encodeURI(course.appIcon),
+                    : encodeURI(course.image),
               },
             ],
           },
@@ -74,7 +74,7 @@ export const flnCatalogGenerator = (
               list: [
                 {
                   name: 'credits',
-                  value: course.credits + '' || '',
+                  value: course.credits || '',
                 },
                 {
                   name: 'instructors',
@@ -82,11 +82,11 @@ export const flnCatalogGenerator = (
                 },
                 {
                   name: 'offeringInstitue',
-                  value: course.organisation?.[0] || '',
+                  value: course.sourceOrganisation || '',
                 },
                 {
                   name: 'url',
-                  value: encodeURI(course.linkedUrl),
+                  value: encodeURI(course.link || ''),
                 },
                 {
                   name: 'enrollmentEndDate',

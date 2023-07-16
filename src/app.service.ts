@@ -18,7 +18,7 @@ export class AppService {
     return 'Hello World!';
   }
 
-  async getCoursesFromSwayam(body: {
+  async getCoursesFromFln(body: {
     context: components['schemas']['Context'];
     message: { intent: components['schemas']['Intent'] };
   }) {
@@ -38,33 +38,30 @@ export class AppService {
     }
     console.log('flattened tags: ', flattenedTags);
     const domain = flattenedTags?.domain !== '' ? flattenedTags?.domain
-      : undefined;
-    const theme = flattenedTags?.curriculargoal !== '' ? flattenedTags?.curriculargoal
-      : undefined;
+      : null;
+    const theme = flattenedTags?.theme !== '' ? flattenedTags?.theme
+      : null;
     const goal = flattenedTags?.goal !== '' ? flattenedTags?.goal
-      : undefined;
+      : null;
     const competency = flattenedTags?.competency !== '' ? flattenedTags?.competency
-      : undefined;
+      : null;
     const language = flattenedTags?.language !== '' ? flattenedTags?.language
-      : undefined;
+      : null;
     const contentType = flattenedTags?.contentType !== '' ? flattenedTags?.contentType
-      : undefined;
+      : null;
 
     try {
 
       const resp = await lastValueFrom(
         this.httpService
-          .post('https://sunbirdsaas.com/api/content/v1/search', {
-            "request": {
-              "filters": {
-                "channel": "013812745304276992183",
-                "domain": [domain],
-                "theme": [theme],
-                "curriculargoal": [goal],
-                "competency": [competency],
-                "contentType": [language],
-                "language": [contentType]
-              }
+          .get('https://onest-strapi.tekdinext.com/fln-contents', {
+            params: {
+              language: language,
+              domain: domain,
+              themes: theme,
+              goal: goal,
+              competency: competency,
+              contentType: contentType
             }
           })
           .pipe(map((item) => item.data)),

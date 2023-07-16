@@ -18,7 +18,7 @@ export class AppService {
     return 'Hello World!';
   }
 
-  async getCoursesFromSwayam(body: {
+  async getCoursesFromFln(body: {
     context: components['schemas']['Context'];
     message: { intent: components['schemas']['Intent'] };
   }) {
@@ -39,7 +39,7 @@ export class AppService {
     console.log('flattened tags: ', flattenedTags);
     const domain = flattenedTags?.domain !== '' ? flattenedTags?.domain
       : undefined;
-    const theme = flattenedTags?.curriculargoal !== '' ? flattenedTags?.curriculargoal
+    const theme = flattenedTags?.theme !== '' ? flattenedTags?.theme
       : undefined;
     const goal = flattenedTags?.goal !== '' ? flattenedTags?.goal
       : undefined;
@@ -59,7 +59,7 @@ export class AppService {
               "filters": {
                 "channel": "013812745304276992183",
                 "domain": [domain],
-                "theme": [theme],
+                "themes": [theme],
                 "curriculargoal": [goal],
                 "competency": [competency],
                 "contentType": [language],

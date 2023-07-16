@@ -38,33 +38,30 @@ export class AppService {
     }
     console.log('flattened tags: ', flattenedTags);
     const domain = flattenedTags?.domain !== '' ? flattenedTags?.domain
-      : undefined;
+      : null;
     const theme = flattenedTags?.theme !== '' ? flattenedTags?.theme
-      : undefined;
+      : null;
     const goal = flattenedTags?.goal !== '' ? flattenedTags?.goal
-      : undefined;
+      : null;
     const competency = flattenedTags?.competency !== '' ? flattenedTags?.competency
-      : undefined;
+      : null;
     const language = flattenedTags?.language !== '' ? flattenedTags?.language
-      : undefined;
+      : null;
     const contentType = flattenedTags?.contentType !== '' ? flattenedTags?.contentType
-      : undefined;
+      : null;
 
     try {
 
       const resp = await lastValueFrom(
         this.httpService
-          .post('https://sunbirdsaas.com/api/content/v1/search', {
-            "request": {
-              "filters": {
-                "channel": "013812745304276992183",
-                "domain": [domain],
-                "themes": [theme],
-                "curriculargoal": [goal],
-                "competency": [competency],
-                "contentType": [language],
-                "language": [contentType]
-              }
+          .get('https://onest-strapi.tekdinext.com/fln-contents', {
+            params: {
+              language: language,
+              domain: domain,
+              themes: theme,
+              goal: goal,
+              competency: competency,
+              contentType: language
             }
           })
           .pipe(map((item) => item.data)),

@@ -2,7 +2,7 @@ import { components } from 'types/schema';
 import { SwayamApiResponse } from 'types/SwayamApiResponse';
 import { SwayamCourse } from 'types/SwayamCourese';
 
-export const flnCatalogGenerator = (
+export const flnCatalogGeneratorV3 = (
   apiData: any,
   query: string,
 ) => {
@@ -87,6 +87,110 @@ export const flnCatalogGenerator = (
                 {
                   name: 'url',
                   value: encodeURI(course.link || ''),
+                },
+                {
+                  name: 'enrollmentEndDate',
+                  value: '2023-07-31T18:29:00.000000Z',
+                },
+              ],
+            },
+          ],
+          rateable: false,
+        };
+        return providerItem;
+      }),
+    };
+    return providerObj;
+  });
+
+  return catalog;
+};
+
+export const flnCatalogGenerator = (
+  apiData: any,
+  query: string,
+) => {
+  const courses: ReadonlyArray<{ node: any }> =
+    apiData;
+  const providerWise = {};
+  let categories: any = new Set();
+
+  courses.forEach((course, index) => {
+    const item = course;
+    const provider = 'fln';
+    // creating the provider wise map
+    if (providerWise[provider]) {
+      providerWise[provider].push(item);
+    } else {
+      providerWise[provider] = [item];
+    }
+  });
+
+  categories = [];
+
+  const catalog = {};
+  catalog['descriptor'] = { name: `Catalog for ${query}` };
+
+  // adding providers
+  catalog['providers'] = Object.keys(providerWise).map((provider: string) => {
+    const providerObj: components['schemas']['Provider'] = {
+      id: provider,
+      descriptor: {
+        name: provider,
+      },
+      categories: [],
+      items: providerWise[provider].map((course: any) => {
+        const providerItem = {
+          id: `${course.id}`,
+          parent_item_id: '',
+          descriptor: {
+            name: course.attributes.title,
+            long_desc: course.attributes.description ? course.attributes.description : '',
+            images: [
+              {
+                url:
+                  course.attributes.image == null
+                    ? encodeURI(
+                      'https://thumbs.dreamstime.com/b/set-colored-pencils-placed-random-order-16759556.jpg'
+                    )
+                    : encodeURI(course.attributes.image),
+              },
+            ],
+          },
+          price: {
+            currency: 'INR',
+            value: 0 + '', // map it to an actual response
+          },
+          category_id: course.primaryCategory || '',
+          recommended: course.featured ? true : false,
+          time: {
+            label: 'Course Schedule',
+            duration: `P${12}W`, // ISO 8601 duration format
+            range: {
+              start: '2023-07-23T18:30:00.000000Z',
+              end: '2023-10-12T18:30:00.000000Z'
+            },
+          },
+          rating: Math.floor(Math.random() * 6).toString(), // map it to an actual response
+          tags: [
+            {
+              name: 'courseInfo',
+              list: [
+                {
+                  name: 'credits',
+                  value: course.attributes.credits || '',
+                },
+                {
+                  name: 'instructors',
+                  value: '',
+                },
+                {
+                  name: 'offeringInstitue',
+                  value: course.attributes.sourceOrganisation || '',
+                },
+                {
+                  name: 'url',
+                  value: encodeURI(course.attributes.link || ''),
                 },
                 {
                   name: 'enrollmentEndDate',

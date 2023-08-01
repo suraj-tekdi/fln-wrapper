@@ -15,13 +15,14 @@ export class AppService {
   constructor(private readonly httpService: HttpService) { }
 
   getHello(): string {
-    return 'Hello World!';
+    return 'fln-wrapper is running!';
   }
 
-  async getCoursesFromFln(body: {
+  async getCoursesFromFlnV3(body: {
     context: components['schemas']['Context'];
     message: { intent: components['schemas']['Intent'] };
   }) {
+    
     const intent: any = body.message.intent;
     console.log('intent: ', intent);
 
@@ -30,6 +31,8 @@ export class AppService {
     const query = intent?.item?.descriptor?.name;
     const tagGroup = intent?.item?.tags;
     console.log('tag group: ', tagGroup);
+    console.log('tag group [0]: ', tagGroup[0]);
+    
     const flattenedTags: any = {};
     if (tagGroup) {
       (tagGroup[0].list as any[])?.forEach((tag) => {
@@ -55,6 +58,7 @@ export class AppService {
       const resp = await lastValueFrom(
         this.httpService
           .get('https://onest-strapi.tekdinext.com/fln-contents', {
+          //  .get('http://localhost:1337/api/fln-contents', {
             params: {
               language: language,
               domain: domain,
@@ -66,7 +70,7 @@ export class AppService {
           })
           .pipe(map((item) => item.data)),
       );
-
+      console.log("resp", resp)
       const flnResponse: any = resp;
       const catalog = flnCatalogGenerator(flnResponse, query);
 
@@ -76,6 +80,77 @@ export class AppService {
           catalog: catalog,
         },
       };
+      console.log("courseData", courseData)
+
+      return courseData;
+    } catch (err) {
+      console.log('err: ', err);
+      throw new InternalServerErrorException(err);
+    }
+  }
+
+  async getCoursesFromFln(body: {
+    context: components['schemas']['Context'];
+    message: { intent: components['schemas']['Intent'] };
+  }) {
+    
+    const intent: any = body.message.intent;
+    console.log('intent: ', intent);
+
+    // destructuring the intent
+    const provider = intent?.provider?.descriptor?.name;
+    const query = intent?.item?.descriptor?.name;
+    const tagGroup = intent?.item?.tags;
+    console.log('tag group: ', tagGroup);
+    
+    const flattenedTags: any = {};
+    if (tagGroup) {
+      (tagGroup[0].list as any[])?.forEach((tag) => {
+        flattenedTags[tag.name] = tag.value;
+      });
+    }
+    console.log('flattened tags: ', flattenedTags);
+    const domain = flattenedTags?.domain !== '' ? flattenedTags?.domain
+      : null;
+    const theme = flattenedTags?.theme !== '' ? flattenedTags?.theme
+      : null;
+    const goal = flattenedTags?.goal !== '' ? flattenedTags?.goal
+      : null;
+    const competency = flattenedTags?.competency !== '' ? flattenedTags?.competency
+      : null;
+    const language = flattenedTags?.language !== '' ? flattenedTags?.language
+      : null;
+    const contentType = flattenedTags?.contentType !== '' ? flattenedTags?.contentType
+      : null;
+
+    try {
+
+      const resp = await lastValueFrom(
+        this.httpService
+          .get('https://onest-strapi.tekdinext.com/api/fln-contents', {
+          //  .get('http://localhost:1337/api/fln-contents', {
+            params: {
+              language: language,
+              domain: domain,
+              themes: theme,
+              goal: goal,
+              competency: competency,
+              contentType: contentType
+            }
+          })
+          .pipe(map((item) => item.data.data)),
+      );
+      console.log("resp", resp)
+      const flnResponse: any = resp;
+      const catalog = flnCatalogGenerator(flnResponse, query);
+
+      const courseData: any = {
+        context: body.context,
+        message: {
+          catalog: catalog,
+        },
+      };
+      console.log("courseData", courseData)
 
       return courseData;
     } catch (err) {

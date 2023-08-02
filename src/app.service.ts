@@ -123,6 +123,8 @@ export class AppService {
     const contentType = flattenedTags?.contentType !== '' ? flattenedTags?.contentType
       : null;
 
+      console.log("language", language)
+
     try {
 
       const resp = await lastValueFrom(
@@ -130,12 +132,12 @@ export class AppService {
           .get('https://onest-strapi.tekdinext.com/api/fln-contents', {
           //  .get('http://localhost:1337/api/fln-contents', {
             params: {
-              language: language,
-              domain: domain,
-              themes: theme,
-              goal: goal,
-              competency: competency,
-              contentType: contentType
+              'filters[language][$eq]': language,
+              'filters[domain][$eq]': domain,
+              'filters[themes][$eq]': theme,
+              'filters[goal][$eq]': goal,
+              'filters[competency]': competency,
+              'filters[contentType]': contentType
             }
           })
           .pipe(map((item) => item.data.data)),

@@ -146,6 +146,16 @@ export const flnCatalogGenerator = (
           descriptor: {
             name: course.attributes.title,
             long_desc: course.attributes.description ? course.attributes.description : '',
+            code: course.attributes.code,
+            competency: course.attributes.competency,
+            contentType: course.attributes.contentType,
+            domain: course.attributes.domain,
+            goal: course.attributes.goal,
+            language: course.attributes.language,
+            link: course.attributes.link,
+            sourceOrganisation: course.attributes.sourceOrganisation,
+            themes: course.attributes.themes,
+            title: course.attributes.title,
             images: [
               {
                 url:
